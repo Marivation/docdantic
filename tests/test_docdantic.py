@@ -32,7 +32,7 @@ def test_is_pydantic_model() -> None:
 def test_get_default_string() -> None:
     field_undefined = PydanticUndefined
     field_with_default = 'test_default'
-    
+
     assert get_default_string(field_undefined) == "..."
     assert get_default_string(field_with_default) == 'test_default'
 
@@ -63,11 +63,13 @@ def test_get_field_info() -> None:
     info = get_field_info(DummyModel)
     assert len(info) == 1
     assert 'DummyModel' in info
-    assert len(info['DummyModel']) == 1
-    assert info['DummyModel'][0].name == '**field**'
-    assert info['DummyModel'][0].type == 'int'
-    assert info['DummyModel'][0].required == 'False'
-    assert info['DummyModel'][0].default == '1'
+    assert len(info['DummyModel']) == 2
+    assert info['DummyModel'][0] is None # no documentation
+    assert info['DummyModel'][1][0].name == '**field**'
+    assert info['DummyModel'][1][0].type == 'int'
+    assert info['DummyModel'][1][0].required == 'False'
+    assert info['DummyModel'][1][0].default == '1'
+    assert info['DummyModel'][1][0].description == '' # no field documentation
 
 
 # Test submodel_link function

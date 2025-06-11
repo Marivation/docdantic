@@ -31,7 +31,7 @@ else:
     _get_fields = lambda model: model.model_fields
 
 __version__ = version(__package__)
-ModelFieldInfo = namedtuple("ModelFieldInfo", "name type required default")
+ModelFieldInfo = namedtuple("ModelFieldInfo", "name type required default description")
 
 
 def is_typing_union(obj: Any) -> bool:
@@ -198,6 +198,13 @@ def get_annotation_string(annotation: Any):
     return str(annotation.__name__)
 
 
+def get_field_description(field: 'FieldInfo'):
+    if field.description is None:
+        return ""
+    else:
+        return field.description
+
+
 def get_field_info(
     model: Any,
     config: dict | None = None,
@@ -223,7 +230,7 @@ def get_field_info(
         # Skip models that are explicitly excluded
         return {}
 
-    models[model_name] = fields
+    models[model_name] = (model.__doc__, fields)
 
     for name, field in _get_fields(model).items():
         if model_name in config.get("exclude", {}) and name in config["exclude"][model_name]:
@@ -234,6 +241,7 @@ def get_field_info(
         annotation_str = get_annotation_string(annotation)
         default = get_default_string(field.default)
         required = str(_get_required(field))
+        description = get_field_description(field)
 
         if is_pydantic_model(annotation):
             get_field_info(annotation, config, models)
@@ -243,7 +251,7 @@ def get_field_info(
                     get_field_info(arg, config, models)
 
         fields.append(
-            ModelFieldInfo(highlight_name(name), annotation_str, required, default)
+            ModelFieldInfo(highlight_name(name), annotation_str, required, default, description)
         )
 
     return models
@@ -263,20 +271,22 @@ def render_table(model_path: str, config: dict) -> str:
         field_info = get_field_info(model, config)
 
         tables = {
-            cls: tabulate.tabulate(
-                [
-                    (field.name, field.type, field.required, field.default,)
-                    for field in fields
-                ],
-                headers=["Name", "Type", "Required", "Default"],
-                tablefmt="github"
+            cls: (
+                    doc, tabulate.tabulate(
+                    [
+                        (field.name, field.type, field.required, field.default, field.description)
+                        for field in fields
+                    ],
+                    headers=["Name", "Type", "Required", "Default", "Description"],
+                    tablefmt="github"
+                )
             )
-            for cls, fields in field_info.items()
+            for cls, (doc, fields) in field_info.items()
         }
 
         return '\n'.join(
-            f"\n### {cls}\n\n{table}\n"
-            for cls, table in tables.items()
+            f"\n### {cls}\n{doc}\n{table}\n"
+            for cls, (doc, table) in tables.items()
         )
 
     print(f"Found no Model at `{model_path}`")
