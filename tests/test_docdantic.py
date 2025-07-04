@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Dict, Literal
 from types import UnionType
 from markdown import Markdown
 from pydantic import BaseModel, Field
@@ -15,8 +15,39 @@ from docdantic import (
     extract_configuration,
     render_table,
     process_line,
-    DocdanticPreprocessor
+    DocdanticPreprocessor,
+    is_typing_literal,
+    is_typing_union,
+    is_typing_list,
+    is_typing_dict
 )
+
+def test_type_checks() -> None:
+    literal = Literal['tmp']
+    union = Union[int, float]
+    array = List[str]
+    dictionary = Dict[str, float]
+
+    assert is_typing_literal(literal) is True
+    assert is_typing_literal(union) is False
+    assert is_typing_literal(array) is False
+    assert is_typing_literal(dictionary) is False
+
+    assert is_typing_union(union) is True
+    assert is_typing_union(literal) is False
+    assert is_typing_union(array) is False
+    assert is_typing_union(dictionary) is False
+
+    assert is_typing_list(array) is True
+    assert is_typing_list(literal) is False
+    assert is_typing_list(union) is False
+    assert is_typing_list(dictionary) is False
+
+    assert is_typing_dict(dictionary) is True
+    assert is_typing_dict(literal) is False
+    assert is_typing_dict(union) is False
+    assert is_typing_dict(array) is False
+
 
 # Test the is_pydantic_model function
 def test_is_pydantic_model() -> None:
@@ -42,8 +73,8 @@ def test_get_annotation_string() -> None:
     assert get_annotation_string(None) == "None"
     assert get_annotation_string(int) == 'int'
     assert get_annotation_string(str) == 'str'
-    assert get_annotation_string(list) == 'list'
-    assert get_annotation_string(dict) == 'dict'
+    assert get_annotation_string(List[str]) == 'List[str]'
+    assert get_annotation_string(Dict[str, int]) == 'Dict[str, int]'
     assert get_annotation_string(bool) == 'bool'
     assert get_annotation_string(float) == 'float'
     assert get_annotation_string(Union[float, int]) == 'Union[float, int]'
@@ -71,6 +102,19 @@ def test_get_field_info() -> None:
     assert info['DummyModel'][1][0].default == '1'
     assert info['DummyModel'][1][0].description == '' # no field documentation
 
+    class DummyCollectionModel(BaseModel):
+        field: List[DummyModel] = []
+
+    info = get_field_info(DummyCollectionModel)
+    assert len(info) == 2
+    assert 'DummyModel' in info
+    assert len(info['DummyCollectionModel']) == 2
+    assert info['DummyCollectionModel'][0] is None # no documentation
+    assert info['DummyCollectionModel'][1][0].name == '**field**'
+    assert info['DummyCollectionModel'][1][0].type == 'List[[DummyModel](#dummymodel)]'
+    assert info['DummyCollectionModel'][1][0].required == 'False'
+    assert info['DummyCollectionModel'][1][0].default == '[]'
+    assert info['DummyCollectionModel'][1][0].description == '' # no field documentation
 
 # Test submodel_link function
 def test_submodel_link():

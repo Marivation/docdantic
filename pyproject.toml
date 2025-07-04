@@ -1,14 +1,17 @@
 [tool.poetry]
 name = "docdantic"
-version = "0.4.0"
+version = "0.5.0"
 description = "A markdown plugin for generating docs from Pydantic models"
-authors = ["Tim Pogue <tim@emergentmethods.ai>"]
+authors = [
+    "Tim Pogue <tim@emergentmethods.ai>",
+    "Jan Mentjes <jan.mentjes@marivation.de>"
+]
 readme = "README.md"
 packages = [
     { include = "docdantic" },
 ]
 license = "MIT"
-repository = "https://gitlab.com/emergentmethods/docdantic"
+repository = "https://github.com/Marivation/docdantic"
 
 
 [tool.poetry.dependencies]

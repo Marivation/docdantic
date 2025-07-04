@@ -1,3 +1,20 @@
+## 0.4.1 (2025-07-03)
+
+### Feat
+
+- support for collection types
+
+### Test
+
+- tests for collection types 
+
+## 0.4.1 (2025-06-11)
+
+### Feat
+
+- class documentation after class name header
+- table includes field description if available
+
 ## 0.3.1 (2024-01-12)
 
 ### Fix

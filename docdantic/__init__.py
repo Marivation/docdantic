@@ -34,6 +34,32 @@ __version__ = version(__package__)
 ModelFieldInfo = namedtuple("ModelFieldInfo", "name type required default description")
 
 
+def is_typing_list(obj: Any) -> bool:
+    """
+    Check if the given object is a typing.List.
+
+    :param obj: Object to check.
+    :return: True if the object is a typing.List, False otherwise.
+    """
+    origin = get_origin(obj)
+    if origin is None:
+        return obj is list
+    else:
+        return obj is list or origin is list
+
+def is_typing_dict(obj: Any) -> bool:
+    """
+    Check if the given object is a typing.Dict.
+
+    :param obj: Object to check.
+    :return: True if the object is a typing.Dict, False otherwise.
+    """
+    origin = get_origin(obj)
+    if origin is None:
+        return obj is dict
+    else:
+        return obj is dict or origin is dict
+
 def is_typing_union(obj: Any) -> bool:
     """
     Check if the given object is a typing.Union.
@@ -192,6 +218,10 @@ def get_annotation_string(annotation: Any):
         return f"Union[{', '.join([get_annotation_string(a) for a in get_args(annotation)])}]"
     elif is_typing_literal(annotation):
         return f"Literal[{', '.join([repr(a) for a in get_args(annotation)])}]"
+    elif is_typing_list(annotation):
+        return f"List[{', '.join([get_annotation_string(a) for a in get_args(annotation)])}]"
+    elif is_typing_dict(annotation):
+        return f"Dict[{', '.join([get_annotation_string(a) for a in get_args(annotation)])}]"
     elif is_pydantic_model(annotation):
         return submodel_link(annotation.__name__)
 
@@ -245,7 +275,7 @@ def get_field_info(
 
         if is_pydantic_model(annotation):
             get_field_info(annotation, config, models)
-        elif is_typing_union(annotation):
+        elif is_typing_union(annotation) or is_typing_list(annotation) or is_typing_dict(annotation):
             for arg in get_args(annotation):
                 if is_pydantic_model(arg):
                     get_field_info(arg, config, models)
